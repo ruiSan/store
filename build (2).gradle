@@ -1,0 +1,165 @@
+//apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion '25.0.3'
+    aaptOptions.cruncherEnabled = false
+    aaptOptions.useNewCruncher = false
+
+    defaultConfig {
+//        applicationId "com.sevenonechat.sdk"
+        minSdkVersion 9
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+
+//        multiDexEnabled true
+    }
+
+    sourceSets {
+        intTest {
+            java {
+                srcDirs 'src/main/java/com/sevenonechat/sdk/sdkCustomUi'
+            }
+        }
+        main {
+            jniLibs.srcDirs = ['libs']
+//            java {
+//                srcDirs 'java/com/sevenonechat/sdk/sdkCustomUi/' // 指定源码目录
+//            }
+        }
+    }
+
+
+
+    packagingOptions {
+        exclude 'META-INF/**'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    aaptOptions {
+        additionalParameters "--no-version-vectors"
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+}
+
+def siteUrl = ''    // project homepage
+def gitUrl = '' // project git
+def sdkDes = '71ChatSDK-'
+group = "com.sevenonechat.sdk"
+version = "3.2.0"
+def jarName = sdkDes + version + '.jar'
+
+task releaseJar(type:Copy) {
+    delete ('build/libs/' + jarName)
+    from('build/intermediates/bundles/default')
+    into('build/tmp')
+    include('classes.jar')
+    rename('classes.jar', jarName)
+}
+
+task sourcesJar(type: Jar, dependsOn: releaseJar) {
+    from android.sourceSets.intTest.java.srcDirs
+    into 'com/sevenonechat/sdk/sdkCustomUi'
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.intTest.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    options.encoding "UTF-8"
+    options.charSet 'UTF-8'
+    options.author true
+    options.version true
+    failOnError false
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+//拷贝javadoc文件
+task copyDoc(type: Copy) {
+    from "${buildDir}/docs/"
+    into "docs"
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
+                name '71sinoSdk'
+                url siteUrl
+                // Set your license
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer { //填写的一些基本信息
+                        id 'xx'
+                        name 'x'
+                        email 'xxx'
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+bintray {
+    user = 'xx'
+    key = 'xx'
+    configurations = ['archives']
+    pkg {
+        repo = "maven"               //跟上面创建的Maven仓库名字保持一致
+        name = "71sinoSdk"                //发布到JCenter上的项目名字
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:appcompat-v7:24.2.0'
+    compile 'com.android.support:recyclerview-v7:24.2.0'
+    compile 'com.alibaba:fastjson:1.2.29'
+    provided files('libs/CJSDK2.0.jar')
+    provided files('libs/SocoalSDK2.0.jar')
+    compile 'com.sevenonechat.client:clientsdk:1.0.1'
+    compile files('libs/clientSdks.jar')
+}

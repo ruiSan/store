@@ -1,0 +1,90 @@
+apply plugin: 'com.android.application'
+android {
+    compileSdkVersion 24
+    buildToolsVersion '25.0.3'
+    aaptOptions.cruncherEnabled = false
+    aaptOptions.useNewCruncher = false
+    signingConfigs {
+        config {
+            storeFile file('../work.keystore.jks')
+            storePassword 'xx'
+            keyAlias 'xx'
+            keyPassword 'xxx'
+        }
+    }
+    defaultConfig {
+        applicationId "com.lj588.customer"
+        minSdkVersion 15
+        targetSdkVersion 22
+        versionCode 5
+        versionName "2.4.0"
+
+
+        multiDexEnabled true
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        resConfigs "en","zh"
+    }
+    buildTypes {
+        release {
+            resValue 'string','APK_TYPE','release'
+            minifyEnabled true
+            //Zipalign优化
+            zipAlignEnabled true
+            // 移除无用的resource文件
+            shrinkResources true
+            signingConfig signingConfigs.config
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            resValue 'string','APK_TYPE','yufabu'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        yufabu.initWith(buildTypes.debug)
+        yufabu {
+            resValue 'string','APK_TYPE','yufabu'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        zbgTest.initWith(buildTypes.debug)
+        zbgTest {
+            resValue 'string','APK_TYPE','zbgTest'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    android.applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def file = output.outputFile
+            if (file.name.endsWith("release.apk")) {
+                output.outputFile = new File(file.parent, "71chatSdkRelease.apk")
+            } else if (file.name.endsWith("debug.apk")) {
+                output.outputFile = new File(file.parent, "71chatSdkDebug.apk")
+            } else if (file.name.endsWith("yufabu.apk")) {
+                output.outputFile = new File(file.parent, "71chatSdkYufabu.apk")
+            } else if (file.name.endsWith("zbgTest.apk")) {
+                output.outputFile = new File(file.parent, "71chatSdkTest.apk")
+            }
+        }
+    }
+    lintOptions {
+        abortOnError false
+    }
+}
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:appcompat-v7:24.2.0'
+    compile 'com.squareup.leakcanary:leakcanary-android:1.5.1'
+    compile project(':71chatSdkUi')
+    //    compile 'com.android.support.test.espresso:espresso-core:2.2.2'
+    compile 'com.android.support.test.espresso:espresso-idling-resource:2.2.2'
+    testCompile 'junit:junit:4.12'
+    androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2'
+    androidTestCompile('com.android.support.test.espresso:espresso-contrib:2.2') {
+        exclude group: 'com.android.support', module: 'appcompat'
+        exclude group: 'com.android.support', module: 'support-v4'
+        exclude module: 'recyclerview-v7'
+    }
+    androidTestCompile 'com.android.support:support-annotations:24.2.0'
+}
